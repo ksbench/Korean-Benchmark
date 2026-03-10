@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ko-Speech-Eval Leaderboard Draft</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="sidebar-head">
+          <p class="sidebar-kicker">Ko-Speech-Eval</p>
+          <h1>Leaderboard</h1>
+        </div>
+        <nav id="taskMenu" class="task-menu"></nav>
+      </aside>
+
+      <main class="content">
+        <header class="hero">
+          <div class="hero-topline">
+            <div>
+              <p class="kicker">Korean Speech Benchmark</p>
+              <h2>HuggingFace Heatmap Leaderboard</h2>
+            </div>
+            <button id="submitToggleBtn" class="submit-link" type="button" aria-label="Submit">
+              <img src="./images/submit.png" alt="Submit" />
+            </button>
+          </div>
+        </header>
+
+        <section id="controlPanel" class="control-panel card hidden">
+          <input
+            id="jsonFile"
+            type="file"
+            accept="application/json,.json,.jsonl,application/x-ndjson"
+          />
+          <div class="control-grid">
+            <label class="field">
+              <span>RankName</span>
+              <input id="rankNameInput" type="text" placeholder="openfree" />
+            </label>
+            <label class="field">
+              <span>Model</span>
+              <input id="modelInput" type="text" placeholder="Qwen2-Audio" />
+            </label>
+            <label class="field">
+              <span>URL</span>
+              <input id="urlInput" type="url" placeholder="https://..." />
+            </label>
+            <label class="field">
+              <span>Submission Task</span>
+              <select id="uploadTaskSelect"></select>
+            </label>
+          </div>
+
+          <div class="control-row">
+            <label for="jsonFile" class="ghost-btn">SELECT FILE</label>
+            <button id="loadSampleBtn" class="ghost-btn" type="button">SAMPLE LOAD</button>
+          </div>
+        </section>
+
+        <section id="homeView" class="view"></section>
+        <section id="taskView" class="view hidden"></section>
+      </main>
+    </div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

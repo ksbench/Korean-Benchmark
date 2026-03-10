@@ -1,69 +1,13 @@
-const TASKS = {
-  SCA_QA: {
-    label: "SCA-QA",
-    metricLabel: "Speech Context Faithfulness",
-    shortMetric: "Faithfulness",
-    lowerBetter: false,
-    datasets: ["History_before_chosun", "History_after_chosun", "K-sports", "K-pop"],
-  },
-  SPEECH_QA: {
-    label: "Speech QA",
-    metricLabel: "Accuracy (%)",
-    shortMetric: "Acc(%)",
-    lowerBetter: false,
-    datasets: ["CLICk", "KoBest BoolQ"],
-  },
-  SPEECH_INSTRUCTION: {
-    label: "Speech Instruction",
-    metricLabel: "GPT-4o Judge Score",
-    shortMetric: "GPT-4o Judge",
-    lowerBetter: false,
-    datasets: ["KUDGE", "Vicuna", "OpenHermes", "Alpaca"],
-  },
-  ASR: {
-    label: "ASR",
-    metricLabel: "CER (%)",
-    shortMetric: "CER",
-    lowerBetter: true,
-    datasets: ["KsponSpeech", "CommonVoice-KO", "Zeroth-Korean"],
-  },
-  TRANSLATION: {
-    label: "Translation",
-    metricLabel: "BLEU / METEOR",
-    shortMetric: "BLEU/METEOR",
-    lowerBetter: false,
-    datasets: ["ETRI-TST-Common", "ETRI-TST-HE"],
-  },
-  LONG_SPEECH_UNDERSTANDING: {
-    label: "Long Speech Understanding",
-    metricLabel: "Accuracy (%)",
-    shortMetric: "Acc(%)",
-    lowerBetter: false,
-    datasets: ["MCTest"],
-  },
-};
+const HOME_VIEW = "HOME";
 
-const TASK_KEYS = Object.keys(TASKS);
-
-const ui = {
-  taskMenu: document.getElementById("taskMenu"),
-  submitToggleBtn: document.getElementById("submitToggleBtn"),
-  controlPanel: document.getElementById("controlPanel"),
-  fileInput: document.getElementById("jsonFile"),
-  loadSampleBtn: document.getElementById("loadSampleBtn"),
-  uploadTaskSelect: document.getElementById("uploadTaskSelect"),
-  rankNameInput: document.getElementById("rankNameInput"),
-  modelInput: document.getElementById("modelInput"),
-  urlInput: document.getElementById("urlInput"),
-  homeView: document.getElementById("homeView"),
-  taskView: document.getElementById("taskView"),
-};
-
-const state = {
-  activeView: "HOME",
-  entries: [],
-  isSubmitPanelOpen: false,
-};
+const TASK_ORDER = [
+  "K-disentQA",
+  "SQA",
+  "Instruct",
+  "ASR",
+  "Translation",
+  "LSQA",
+];
 
 const OVERALL_BADGE_IMAGES = {
   1: "./images/1st.png",
@@ -71,85 +15,30 @@ const OVERALL_BADGE_IMAGES = {
   3: "./images/3rd.png",
 };
 
-function setStatus(text) {
-  return text;
-}
+const ui = {
+  taskMenu: document.getElementById("taskMenu"),
+  homeView: document.getElementById("homeView"),
+  taskView: document.getElementById("taskView"),
+};
+
+const state = {
+  activeView: HOME_VIEW,
+  tasks: [],
+  taskMap: {},
+  entries: [],
+  loading: true,
+  error: "",
+};
 
 function toNum(value) {
-  const n = Number(value);
-  return Number.isFinite(n) ? n : null;
+  const num = Number(value);
+  return Number.isFinite(num) ? num : null;
 }
 
 function average(values) {
   const valid = values.filter((value) => value !== null);
   if (!valid.length) return null;
   return valid.reduce((sum, value) => sum + value, 0) / valid.length;
-}
-
-function taskAverage(taskKey, taskScores) {
-  const datasets = TASKS[taskKey].datasets;
-  return average(
-    datasets.map((dataset) => toNum(taskScores ? taskScores[dataset] : null)),
-  );
-}
-
-function normalizeJsonArray(input) {
-  if (!Array.isArray(input)) {
-    throw new Error("Top-level JSON must be an array.");
-  }
-
-  return input.map((item, index) => {
-    const tasks = {};
-    TASK_KEYS.forEach((taskKey) => {
-      const taskNode =
-        (item.tasks && item.tasks[taskKey]) ||
-        (item.dataset_scores && item.dataset_scores[taskKey]) ||
-        {};
-      const normalizedTask = {};
-
-      if (taskNode.datasets) {
-        TASKS[taskKey].datasets.forEach((dataset) => {
-          normalizedTask[dataset] = toNum(taskNode.datasets[dataset]);
-        });
-      } else {
-        TASKS[taskKey].datasets.forEach((dataset) => {
-          normalizedTask[dataset] = toNum(taskNode[dataset]);
-        });
-      }
-
-      tasks[taskKey] = normalizedTask;
-    });
-
-    return {
-      id: item.id || `entry-${index + 1}`,
-      rank_name: item.rank_name || item.rankName || `Entry ${index + 1}`,
-      model: item.model || "",
-      url: item.url || "",
-      status: item.status || "scored",
-      source: item.source || "aggregate-json",
-      tasks,
-    };
-  });
-}
-
-function enrichEntries(entries) {
-  return entries.map((entry) => {
-    const taskOverall = {};
-    TASK_KEYS.forEach((taskKey) => {
-      taskOverall[taskKey] = taskAverage(taskKey, entry.tasks[taskKey]);
-    });
-
-    return {
-      ...entry,
-      taskOverall,
-      overall: average(TASK_KEYS.map((taskKey) => taskOverall[taskKey])),
-    };
-  });
-}
-
-function metricClass(taskKey, value) {
-  if (value === null) return "muted";
-  return TASKS[taskKey].lowerBetter ? "metric-bad" : "metric-good";
 }
 
 function compareScores(a, b, lowerBetter) {
@@ -159,43 +48,136 @@ function compareScores(a, b, lowerBetter) {
   return lowerBetter ? a - b : b - a;
 }
 
+function orderedTasks(tasks) {
+  return [...tasks].sort((left, right) => {
+    const leftIndex = TASK_ORDER.indexOf(left.id);
+    const rightIndex = TASK_ORDER.indexOf(right.id);
+    const normalizedLeft = leftIndex === -1 ? Number.MAX_SAFE_INTEGER : leftIndex;
+    const normalizedRight = rightIndex === -1 ? Number.MAX_SAFE_INTEGER : rightIndex;
+    if (normalizedLeft === normalizedRight) {
+      return left.label.localeCompare(right.label);
+    }
+    return normalizedLeft - normalizedRight;
+  });
+}
+
+function buildTaskMap(tasks) {
+  return tasks.reduce((accumulator, task) => {
+    accumulator[task.id] = task;
+    return accumulator;
+  }, {});
+}
+
+function datasetIds(task) {
+  return (task.datasets || []).map((dataset) => dataset.id);
+}
+
+function metricValue(entry, taskId, datasetId) {
+  if (!entry.tasks || !entry.tasks[taskId]) return null;
+  const dataset = entry.tasks[taskId][datasetId];
+  return dataset ? toNum(dataset.value) : null;
+}
+
+function metricDisplay(entry, taskId, datasetId) {
+  if (!entry.tasks || !entry.tasks[taskId]) return "-";
+  const dataset = entry.tasks[taskId][datasetId];
+  if (!dataset) return "-";
+  return dataset.display || (dataset.value === null ? "-" : String(dataset.value));
+}
+
+function computeTaskOverall(entry, task) {
+  return average(datasetIds(task).map((datasetId) => metricValue(entry, task.id, datasetId)));
+}
+
+function normalizeTaskScores(entries, tasks) {
+  return tasks.reduce((accumulator, task) => {
+    const values = entries
+      .map((entry) => entry.taskOverall[task.id])
+      .filter((value) => value !== null);
+
+    if (!values.length) {
+      accumulator[task.id] = null;
+      return accumulator;
+    }
+
+    const minValue = Math.min(...values);
+    const maxValue = Math.max(...values);
+    accumulator[task.id] = { minValue, maxValue };
+    return accumulator;
+  }, {});
+}
+
+function normalizedScore(value, range, lowerBetter) {
+  if (value === null || !range) return null;
+  if (range.maxValue === range.minValue) return 100;
+  if (lowerBetter) {
+    return ((range.maxValue - value) / (range.maxValue - range.minValue)) * 100;
+  }
+  return ((value - range.minValue) / (range.maxValue - range.minValue)) * 100;
+}
+
+function enrichEntries(entries, tasks) {
+  const withTaskOverall = entries.map((entry) => {
+    const taskOverall = {};
+    tasks.forEach((task) => {
+      taskOverall[task.id] = computeTaskOverall(entry, task);
+    });
+    return { ...entry, taskOverall };
+  });
+
+  const ranges = normalizeTaskScores(withTaskOverall, tasks);
+  return withTaskOverall.map((entry) => {
+    const normalizedTaskScores = {};
+    tasks.forEach((task) => {
+      normalizedTaskScores[task.id] = normalizedScore(
+        entry.taskOverall[task.id],
+        ranges[task.id],
+        task.lowerBetter,
+      );
+    });
+
+    return {
+      ...entry,
+      normalizedTaskScores,
+      overall: average(tasks.map((task) => normalizedTaskScores[task.id])),
+    };
+  });
+}
+
 function sortOverall(entries) {
   return [...entries]
-    .sort((a, b) => compareScores(a.overall, b.overall, false))
+    .sort((left, right) => compareScores(left.overall, right.overall, false))
     .map((entry, index) => ({ ...entry, rank: index + 1 }));
 }
 
-function sortTask(entries, taskKey, datasetName) {
-  const lowerBetter = TASKS[taskKey].lowerBetter;
+function sortTask(entries, task, datasetId) {
   return [...entries]
-    .sort((a, b) => {
-      const aValue =
-        datasetName === "Overall"
-          ? a.taskOverall[taskKey]
-          : toNum(a.tasks[taskKey] ? a.tasks[taskKey][datasetName] : null);
-      const bValue =
-        datasetName === "Overall"
-          ? b.taskOverall[taskKey]
-          : toNum(b.tasks[taskKey] ? b.tasks[taskKey][datasetName] : null);
-      return compareScores(aValue, bValue, lowerBetter);
+    .sort((left, right) => {
+      const leftValue =
+        datasetId === "Overall"
+          ? left.taskOverall[task.id]
+          : metricValue(left, task.id, datasetId);
+      const rightValue =
+        datasetId === "Overall"
+          ? right.taskOverall[task.id]
+          : metricValue(right, task.id, datasetId);
+      return compareScores(leftValue, rightValue, task.lowerBetter);
     })
     .map((entry, index) => ({ ...entry, rank: index + 1 }));
 }
 
-function entriesForTask(taskKey) {
-  return state.entries.filter((entry) => {
-    if (entry.status !== "pending") return true;
-    return entry.pendingTask === taskKey;
-  });
+function metricClass(lowerBetter, value) {
+  if (value === null) return "muted";
+  return lowerBetter ? "metric-bad" : "metric-good";
 }
 
 function renderMenu() {
   const items = [
-    { key: "HOME", label: "Home", meta: "Overall ranking" },
-    ...TASK_KEYS.map((taskKey) => ({
-      key: taskKey,
-      label: TASKS[taskKey].label,
-      meta: `${TASKS[taskKey].datasets.length} datasets`,
+    { key: HOME_VIEW, label: "Home", meta: "Overall ranking" },
+    ...state.tasks.map((task) => ({
+      key: task.id,
+      label: task.label,
+      meta: `${task.datasets.length} datasets`,
     })),
   ];
 
@@ -216,20 +198,6 @@ function renderMenu() {
       renderApp();
     });
   });
-}
-
-function renderUploadTaskOptions() {
-  ui.uploadTaskSelect.innerHTML = TASK_KEYS.map(
-    (taskKey) => `<option value="${taskKey}">${TASKS[taskKey].label}</option>`,
-  ).join("");
-
-  if (state.activeView !== "HOME" && TASKS[state.activeView]) {
-    ui.uploadTaskSelect.value = state.activeView;
-  }
-}
-
-function renderControlPanel() {
-  ui.controlPanel.classList.toggle("hidden", !state.isSubmitPanelOpen);
 }
 
 function renderRankStrip(entries) {
@@ -262,39 +230,39 @@ function renderRankStrip(entries) {
 }
 
 function renderHomeTable(entries) {
-  const topRow = [
-    '<th rowspan="2" class="rank-col">Rank</th>',
-    '<th rowspan="2">RankName</th>',
-    '<th rowspan="2">Model</th>',
+  const headerTop = [
+    '<th rowspan="2" class="rank-col col-rank">Rank</th>',
+    '<th rowspan="2" class="col-rankname">RankName</th>',
+    '<th rowspan="2" class="col-model">Model</th>',
     '<th rowspan="2">URL</th>',
     '<th rowspan="2">Overall</th>',
-    ...TASK_KEYS.map(
-      (taskKey) =>
-        `<th class="grouped" colspan="1">${TASKS[taskKey].label}</th>`,
-    ),
+    ...state.tasks.map((task) => `<th class="grouped" colspan="1">${task.label}</th>`),
   ].join("");
 
-  const subRow = TASK_KEYS.map(
-    (taskKey) => `<th>${TASKS[taskKey].shortMetric}</th>`,
-  ).join("");
+  const headerBottom = state.tasks
+    .map((task) => `<th>${task.shortMetric}</th>`)
+    .join("");
 
-  const bodyRows = entries
+  const rows = entries
     .map((entry) => {
       const urlCell = entry.url
         ? `<a class="url-link" href="${entry.url}" target="_blank" rel="noopener noreferrer" aria-label="External link"><img src="./images/external-link.png" alt="" /></a>`
         : "-";
-      const taskCells = TASK_KEYS.map((taskKey) => {
-        const value = entry.taskOverall[taskKey];
-        return `<td><span class="${metricClass(taskKey, value)}">${value === null ? "-" : value.toFixed(3)}</span></td>`;
-      }).join("");
+
+      const taskCells = state.tasks
+        .map((task) => {
+          const value = entry.taskOverall[task.id];
+          return `<td><span class="${metricClass(task.lowerBetter, value)}">${value === null ? "-" : value.toFixed(2)}</span></td>`;
+        })
+        .join("");
 
       return `
         <tr>
-          <td class="rank-col">${entry.rank}</td>
-          <td>${entry.rank_name}</td>
-          <td>${entry.model || "-"}</td>
+          <td class="rank-col col-rank">${entry.rank}</td>
+          <td class="col-rankname">${entry.rank_name}</td>
+          <td class="col-model">${entry.model || entry.rank_name}</td>
           <td>${urlCell}</td>
-          <td>${entry.overall === null ? "-" : entry.overall.toFixed(3)}</td>
+          <td>${entry.overall === null ? "-" : entry.overall.toFixed(2)}</td>
           ${taskCells}
         </tr>
       `;
@@ -308,27 +276,34 @@ function renderHomeTable(entries) {
       </div>
       <div class="table-scroll">
         <table>
+          <colgroup>
+            <col class="col-rank" />
+            <col class="col-rankname" />
+            <col class="col-model" />
+            <col />
+            <col />
+            ${state.tasks.map(() => "<col />").join("")}
+          </colgroup>
           <thead>
-            <tr>${topRow}</tr>
-            <tr>${subRow}</tr>
+            <tr>${headerTop}</tr>
+            <tr>${headerBottom}</tr>
           </thead>
-          <tbody>${bodyRows}</tbody>
+          <tbody>${rows}</tbody>
         </table>
       </div>
     </section>
   `;
 }
 
-function renderHome() {
-  const ranked = sortOverall(state.entries);
-  ui.homeView.innerHTML = `${renderRankStrip(ranked)}${renderHomeTable(ranked)}`;
-}
-
 function renderTask() {
-  const taskKey = state.activeView;
-  const task = TASKS[taskKey];
-  const datasetOptions = ["Overall", ...task.datasets];
-  const initialDataset = datasetOptions[0];
+  const task = state.taskMap[state.activeView];
+  if (!task) {
+    ui.taskView.innerHTML = "";
+    return;
+  }
+
+  const options = [{ id: "Overall", label: "Overall" }, ...task.datasets];
+  const initialDatasetId = options[0].id;
 
   ui.taskView.innerHTML = `
     <section class="section-card card">
@@ -341,16 +316,14 @@ function renderTask() {
         <label class="field">
           <span>Dataset</span>
           <select id="taskDatasetSelect">
-            ${datasetOptions
-              .map((dataset) => `<option value="${dataset}">${dataset}</option>`)
+            ${options
+              .map((dataset) => `<option value="${dataset.id}">${dataset.label}</option>`)
               .join("")}
           </select>
         </label>
         <label class="field">
           <span>Metric</span>
-          <select id="taskMetricSelect" disabled>
-            <option>${task.metricLabel}</option>
-          </select>
+          <input type="text" value="${task.metricLabel}" readonly />
         </label>
       </div>
       <div id="taskTableMount"></div>
@@ -360,27 +333,30 @@ function renderTask() {
   const datasetSelect = document.getElementById("taskDatasetSelect");
   const tableMount = document.getElementById("taskTableMount");
 
-  function drawTaskTable(datasetName) {
-    const rows = sortTask(entriesForTask(taskKey), taskKey, datasetName);
-    const headerCells = `
-      <th class="rank-col col-rank">Rank</th>
-      <th class="col-rankname">RankName</th>
-      <th class="col-model">Model</th>
-      <th>${datasetName}</th>
-    `;
+  function drawTaskTable(datasetId) {
+    const rankedEntries = sortTask(state.entries, task, datasetId);
+    const activeLabel =
+      datasetId === "Overall"
+        ? "Overall"
+        : (task.datasets.find((dataset) => dataset.id === datasetId) || {}).label || datasetId;
 
-    const bodyRows = rows
+    const rows = rankedEntries
       .map((entry) => {
-        const datasetValue =
-          datasetName === "Overall"
-            ? toNum(entry.taskOverall[taskKey])
-            : toNum(entry.tasks[taskKey] ? entry.tasks[taskKey][datasetName] : null);
+        const numericValue =
+          datasetId === "Overall"
+            ? entry.taskOverall[task.id]
+            : metricValue(entry, task.id, datasetId);
+        const displayValue =
+          datasetId === "Overall"
+            ? (numericValue === null ? "-" : numericValue.toFixed(2))
+            : metricDisplay(entry, task.id, datasetId);
+
         return `
           <tr>
             <td class="rank-col col-rank">${entry.rank}</td>
             <td class="col-rankname">${entry.rank_name}</td>
-            <td class="col-model">${entry.model || "-"}</td>
-            <td><span class="${metricClass(taskKey, datasetValue)}">${datasetValue === null ? "-" : datasetValue.toFixed(3)}</span></td>
+            <td class="col-model">${entry.model || entry.rank_name}</td>
+            <td><span class="${metricClass(task.lowerBetter, numericValue)}">${displayValue}</span></td>
           </tr>
         `;
       })
@@ -396,9 +372,14 @@ function renderTask() {
             <col />
           </colgroup>
           <thead>
-            <tr>${headerCells}</tr>
+            <tr>
+              <th class="rank-col col-rank">Rank</th>
+              <th class="col-rankname">RankName</th>
+              <th class="col-model">Model</th>
+              <th>${activeLabel}</th>
+            </tr>
           </thead>
-          <tbody>${bodyRows}</tbody>
+          <tbody>${rows}</tbody>
         </table>
       </div>
     `;
@@ -408,15 +389,58 @@ function renderTask() {
     drawTaskTable(event.target.value);
   });
 
-  drawTaskTable(initialDataset);
+  drawTaskTable(initialDatasetId);
+}
+
+function renderLoading() {
+  const content = `
+    <section class="section-card card">
+      <div class="section-head">
+        <h3>Loading</h3>
+      </div>
+      <p class="section-meta">Reading aggregated summary data...</p>
+    </section>
+  `;
+  ui.homeView.innerHTML = content;
+  ui.taskView.innerHTML = "";
+}
+
+function renderError() {
+  const content = `
+    <section class="section-card card">
+      <div class="section-head">
+        <h3>Data Load Failed</h3>
+      </div>
+      <p class="section-meta">${state.error}</p>
+    </section>
+  `;
+  ui.homeView.innerHTML = content;
+  ui.taskView.innerHTML = "";
+}
+
+function renderHome() {
+  const rankedEntries = sortOverall(state.entries);
+  ui.homeView.innerHTML = `${renderRankStrip(rankedEntries)}${renderHomeTable(rankedEntries)}`;
 }
 
 function renderApp() {
   renderMenu();
-  renderUploadTaskOptions();
-  renderControlPanel();
 
-  if (state.activeView === "HOME") {
+  if (state.loading) {
+    ui.homeView.classList.remove("hidden");
+    ui.taskView.classList.add("hidden");
+    renderLoading();
+    return;
+  }
+
+  if (state.error) {
+    ui.homeView.classList.remove("hidden");
+    ui.taskView.classList.add("hidden");
+    renderError();
+    return;
+  }
+
+  if (state.activeView === HOME_VIEW) {
     ui.homeView.classList.remove("hidden");
     ui.taskView.classList.add("hidden");
     ui.taskView.innerHTML = "";
@@ -430,97 +454,26 @@ function renderApp() {
   renderTask();
 }
 
-function inferTaskFromViewOrSelection() {
-  if (TASKS[state.activeView]) return state.activeView;
-  return ui.uploadTaskSelect.value || "ASR";
-}
-
-function pendingEntryFromJsonl(lines, fileName) {
-  const taskKey = inferTaskFromViewOrSelection();
-  return {
-    id: `pending-${Date.now()}`,
-    rank_name: ui.rankNameInput.value.trim() || fileName.replace(/\.jsonl$/i, ""),
-    model: ui.modelInput.value.trim() || "Pending model",
-    url: ui.urlInput.value.trim(),
-    status: "pending",
-    source: "raw-jsonl",
-    rawLineCount: lines.length,
-    tasks: TASK_KEYS.reduce((acc, key) => {
-      acc[key] = {};
-      TASKS[key].datasets.forEach((dataset) => {
-        acc[key][dataset] = null;
-      });
-      return acc;
-    }, {}),
-    pendingTask: taskKey,
-  };
-}
-
-function mergeEntries(newEntries) {
-  state.entries = enrichEntries([...state.entries, ...newEntries]);
-  renderApp();
-}
-
-function parseJsonl(text, fileName) {
-  const lines = text
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
-
-  lines.forEach((line) => {
-    JSON.parse(line);
-  });
-
-  const entry = pendingEntryFromJsonl(lines, fileName);
-  mergeEntries([entry]);
-  setStatus(
-    `jsonl uploaded: ${fileName}, ${lines.length} lines, queued for ${TASKS[entry.pendingTask].label}`,
-  );
-}
-
-function parseJson(text) {
-  const json = JSON.parse(text);
-  const entries = normalizeJsonArray(json);
-  const pendingEntries = state.entries.filter((entry) => entry.status === "pending");
-  state.entries = enrichEntries([...entries, ...pendingEntries]);
-  renderApp();
-  setStatus(
-    `json loaded: ${entries.length} scored entries, keeping ${pendingEntries.length} pending entries`,
-  );
-}
-
-async function loadSample() {
+async function loadLeaderboardData() {
   try {
-    const res = await fetch("./sample-data.json");
-    const json = await res.text();
-    parseJson(json);
-  } catch (error) {
-    setStatus(`sample load failed: ${error.message}`);
-  }
-}
-
-ui.fileInput.addEventListener("change", async (event) => {
-  const file = event.target.files && event.target.files[0];
-  if (!file) return;
-
-  try {
-    const text = await file.text();
-    if (file.name.toLowerCase().endsWith(".jsonl")) {
-      parseJsonl(text, file.name);
-    } else {
-      parseJson(text);
+    const response = await fetch("./data/leaderboard-data.json", { cache: "no-store" });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
     }
-  } catch (error) {
-    setStatus(`file parsing failed: ${error.message}`);
-  } finally {
-    ui.fileInput.value = "";
-  }
-});
 
-ui.loadSampleBtn.addEventListener("click", loadSample);
-ui.submitToggleBtn.addEventListener("click", () => {
-  state.isSubmitPanelOpen = !state.isSubmitPanelOpen;
-  renderControlPanel();
-});
+    const payload = await response.json();
+    state.tasks = orderedTasks(payload.tasks || []);
+    state.taskMap = buildTaskMap(state.tasks);
+    state.entries = enrichEntries(payload.entries || [], state.tasks);
+    state.loading = false;
+    state.error = "";
+  } catch (error) {
+    state.loading = false;
+    state.error = error.message;
+  }
+
+  renderApp();
+}
 
 renderApp();
+loadLeaderboardData();

@@ -338,7 +338,7 @@
       "id": "gemma3n_vllm",
       "rank_name": "gemma3n_vllm",
       "model": "google/gemma-3n-E4B-it",
-      "url": "",
+      "url": "https://huggingface.co/google/gemma-3n-E4B-it",
       "tasks": {
         "ASR": {
           "common_voice_korea": {
@@ -634,7 +634,7 @@
       "id": "qwen3_onmi",
       "rank_name": "qwen3_onmi",
       "model": "Qwen/Qwen3-Omni-30B-A3B-Instruct",
-      "url": "",
+      "url": "https://huggingface.co/Qwen/Qwen3-Omni-30B-A3B-Instruct",
       "tasks": {
         "ASR": {
           "common_voice_korea": {
@@ -782,7 +782,7 @@
       "id": "voxtral",
       "rank_name": "voxtral",
       "model": "mistralai/Voxtral-Mini-3B-2507",
-      "url": "",
+      "url": "https://huggingface.co/mistralai/Voxtral-Mini-3B-2507",
       "tasks": {
         "ASR": {
           "common_voice_korea": {

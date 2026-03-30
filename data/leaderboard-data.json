@@ -153,8 +153,8 @@
     {
       "id": "Translation",
       "label": "Translation",
-      "metricLabel": "BLEU / METEOR",
-      "shortMetric": "BLEU / METEOR",
+      "metricLabel": "BERTScore",
+      "shortMetric": "BERTScore",
       "lowerBetter": false,
       "datasets": [
         {

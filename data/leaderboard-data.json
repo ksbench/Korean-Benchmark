@@ -14,32 +14,16 @@
           "label": "History_after_chosun"
         },
         {
-          "id": "history_after_chosun_other",
-          "label": "History_after_chosun Other"
-        },
-        {
           "id": "history_before_chosun",
           "label": "History_before_chosun"
-        },
-        {
-          "id": "history_before_chosun_other",
-          "label": "History_before_chosun Other"
         },
         {
           "id": "k-sports",
           "label": "K-sports"
         },
         {
-          "id": "k-sports_other",
-          "label": "K-sports Other"
-        },
-        {
           "id": "kpop",
           "label": "K-pop"
-        },
-        {
-          "id": "kpop_other",
-          "label": "K-pop Other"
         }
       ]
     },
@@ -253,10 +237,6 @@
           }
         },
         "K-disentQA": {
-          "history_after_chosun_other": {
-            "value": 58.536585365853654,
-            "display": "58.54"
-          },
           "history_after_chosun": {
             "value": 59.72,
             "display": "59.72"
@@ -265,25 +245,13 @@
             "value": 66.25,
             "display": "66.25"
           },
-          "history_before_chosun_other": {
-            "value": 65.34653465346535,
-            "display": "65.35"
-          },
           "k-sports": {
             "value": 86.96,
             "display": "86.96"
           },
-          "k-sports_other": {
-            "value": 84.0909090909091,
-            "display": "84.09"
-          },
           "kpop": {
             "value": 78.26,
             "display": "78.26"
-          },
-          "kpop_other": {
-            "value": 73.7864077669903,
-            "display": "73.79"
           }
         },
         "PA-QA": {
@@ -405,33 +373,17 @@
             "value": 45.76,
             "display": "45.76"
           },
-          "history_after_chosun_other": {
-            "value": 46.0,
-            "display": "46.00"
-          },
           "history_before_chosun": {
             "value": 67.35,
             "display": "67.35"
-          },
-          "history_before_chosun_other": {
-            "value": 56.666666666666664,
-            "display": "56.67"
           },
           "k-sports": {
             "value": 76.60,
             "display": "76.60"
           },
-          "k-sports_other": {
-            "value": 73.0,
-            "display": "73.00"
-          },
           "kpop": {
             "value": 73.24,
             "display": "73.24"
-          },
-          "kpop_other": {
-            "value": 64.28571428571429,
-            "display": "64.29"
           }
         },
         "PA-QA": {
@@ -549,10 +501,6 @@
           }
         },
         "K-disentQA": {
-          "history_after_chosun_other": {
-            "value": 42.68292682926829,
-            "display": "42.68"
-          },
           "history_after_chosun": {
             "value": 32.30,
             "display": "32.30"
@@ -561,25 +509,13 @@
             "value": 61.40,
             "display": "61.40"
           },
-          "history_before_chosun_other": {
-            "value": 62.37623762376238,
-            "display": "62.38"
-          },
           "k-sports": {
             "value": 39.30,
             "display": "39.30"
           },
-          "k-sports_other": {
-            "value": 46.590909090909086,
-            "display": "46.59"
-          },
           "kpop": {
             "value": 37.50,
             "display": "37.50"
-          },
-          "kpop_other": {
-            "value": 40.77669902912621,
-            "display": "40.78"
           }
         },
         "PA-QA": {
@@ -701,33 +637,17 @@
             "value": 92.31,
             "display": "92.31"
           },
-          "history_after_chosun_other": {
-            "value": 83.0,
-            "display": "83.00"
-          },
           "history_before_chosun": {
             "value": 94.64,
             "display": "94.64"
-          },
-          "history_before_chosun_other": {
-            "value": 93.33333333333333,
-            "display": "93.33"
           },
           "k-sports": {
             "value": 93.88,
             "display": "93.88"
           },
-          "k-sports_other": {
-            "value": 91.0,
-            "display": "91.00"
-          },
           "kpop": {
             "value": 95.71,
             "display": "95.71"
-          },
-          "kpop_other": {
-            "value": 83.33333333333334,
-            "display": "83.33"
           }
         },
         "PA-QA": {
@@ -845,10 +765,6 @@
           }
         },
         "K-disentQA": {
-          "history_after_chosun_other": {
-            "value": 78.04878048780488,
-            "display": "78.05"
-          },
           "history_after_chosun": {
             "value": 85.71,
             "display": "85.71"
@@ -857,25 +773,13 @@
             "value": 85.71,
             "display": "85.71"
           },
-          "history_before_chosun_other": {
-            "value": 86.13861386138613,
-            "display": "86.14"
-          },
           "k-sports": {
             "value": 95.83,
             "display": "95.83"
           },
-          "k-sports_other": {
-            "value": 94.31818181818183,
-            "display": "94.32"
-          },
           "kpop": {
             "value": 88.64,
             "display": "88.64"
-          },
-          "kpop_other": {
-            "value": 90.29126213592234,
-            "display": "90.29"
           }
         },
         "PA-QA": {

@@ -113,10 +113,6 @@
           "label": "CommonVoice-KO"
         },
         {
-          "id": "common_voice_korea_other",
-          "label": "CommonVoice-KO Other"
-        },
-        {
           "id": "ksponspeech_eval_clean",
           "label": "KsponSpeech Clean"
         },
@@ -180,10 +176,6 @@
           "common_voice_korea": {
             "value": 13.738049713193117,
             "display": "13.74"
-          },
-          "common_voice_korea_other": {
-            "value": 26.73996175908222,
-            "display": "26.74"
           },
           "ksponspeech_eval_clean": {
             "value": 83.18526725056962,
@@ -313,10 +305,6 @@
             "value": 144.5793499043977,
             "display": "144.58"
           },
-          "common_voice_korea_other": {
-            "value": 178.34163155878971,
-            "display": "178.34"
-          },
           "ksponspeech_eval_clean": {
             "value": 142.99420974518696,
             "display": "142.99"
@@ -444,10 +432,6 @@
           "common_voice_korea": {
             "value": 33.04971319311664,
             "display": "33.05"
-          },
-          "common_voice_korea_other": {
-            "value": 36.21414913957935,
-            "display": "36.21"
           },
           "ksponspeech_eval_clean": {
             "value": 134.18967787788205,
@@ -577,10 +561,6 @@
             "value": 4.961759082217973,
             "display": "4.96"
           },
-          "common_voice_korea_other": {
-            "value": 6.779011872845652,
-            "display": "6.78"
-          },
           "ksponspeech_eval_clean": {
             "value": 8.459624992161208,
             "display": "8.46"
@@ -708,10 +688,6 @@
           "common_voice_korea": {
             "value": 60.09560229445506,
             "display": "60.10"
-          },
-          "common_voice_korea_other": {
-            "value": 58.98123324396782,
-            "display": "58.98"
           },
           "ksponspeech_eval_clean": {
             "value": 62.62463680260875,
